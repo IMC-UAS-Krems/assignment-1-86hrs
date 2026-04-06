@@ -23,6 +23,11 @@ class Track():
     def duration_minutes(self):
         return (self.duration_seconds / 60)
 
+    def __eq__ (self, other):
+        if not isinstance(other, Track):
+            return False
+        return self.track_id == other.track_id
+
 class Song(Track):
     def __init__(self, track_id, title, duration_seconds, genre, artist):
         super().__init__(track_id, title, duration_seconds, genre)

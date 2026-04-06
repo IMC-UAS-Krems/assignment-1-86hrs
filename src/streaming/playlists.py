@@ -8,31 +8,32 @@ Classes to implement:
     - CollaborativePlaylist
 """
 
-class Playlist():
-    def __init__(self, playlist_id, name, owner, tracks = []):
+class Playlist:
+    def __init__(self, playlist_id, name, owner):
         self.playlist_id = playlist_id
         self.name = name
         self.owner = owner
-        self.tracks = tracks
+        self.tracks = []
 
     def add_track(self, track):
-        self.tracks.append(track)
+        if track not in self.tracks:
+          self.tracks.append(track)
+      
     def remove_track(self, track_id):
-        pass
-    def total_duration_seconds(self) -> int:
-        t = 0
-        for s in self.tracks:
-            t += s.duration_minutes() * 60
-        return t
+        self.tracks = [t for t in self.tracks if t.track_id != track_id]
 
+    def total_duration_seconds(self):
+        return sum(track.duration_seconds for track in self.tracks)
+    
 class CollaborativePlaylist(Playlist):
-    def __init__(self, playlist_id, name, owner, tracks = [], contributors = []):
-        super().__init__(playlist_id, name, owner,  tracks = [])
-        self.contributors = contributors
+    def __init__(self, playlist_id, name, owner):
+        super().__init__(playlist_id, name, owner)
+        self.contributors = [owner]
+    
     def add_contributor(self, user):
-        self.contributors.append(user)
-    def remove_contributor(self, user):
-        for x in self.contributors:
-            if x == user:
-                self.contributors.remove(user)
+        if user not in self.contributors:
+          self.contributors.append(user)
 
+    def remove_contributor(self, user):
+        if user != self.owner:
+          self.contributors = [c for c in self.contributors if c != user]

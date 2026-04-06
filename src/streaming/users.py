@@ -12,7 +12,7 @@ Classes to implement:
 """
 from datetime import datetime
 
-class User:
+class User():
     def __init__(self, user_id, name = "", age = 0):
     	self.user_id = user_id
     	self.name = name
@@ -33,7 +33,7 @@ class User:
             t += s.duration_listened_minutes()
         return t
     def unique_tracks_listened(self) -> list:
-        pass
+        return {session.track.track_id for session in self.sessions}
 
 class FreeUser(User):
     def __init__(self, user_id, name, age):
