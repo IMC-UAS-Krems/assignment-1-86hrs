@@ -7,6 +7,7 @@ and provides query methods for analytics.
 Classes to implement:
   - StreamingPlatform
 """
+
 from datetime import datetime, timedelta
 from .users import User, PremiumUser, FamilyMember
 from .tracks import Track, Song
@@ -14,6 +15,7 @@ from .artists import Artist
 from .albums import Album
 from .playlists import Playlist, CollaborativePlaylist
 from .sessions import ListeningSession
+
 
 class StreamingPlatform:
     def __init__(self, name: str):
@@ -42,6 +44,7 @@ class StreamingPlatform:
 
     def record_session(self, session: ListeningSession):
         self._sessions.append(session)
+        session.user.add_session(session)
 
     def get_track(self, track_id: str):
         return self._catalogue.get(track_id)
@@ -68,27 +71,24 @@ class StreamingPlatform:
                 total_seconds += session.duration_listened_seconds
         return total_seconds / 60
 
-    def avg_unique_tracks_per_premium_user(self, days: int = 30) -> float:
-        cutoff = datetime.now() - timedelta(days=days)
-
-        premium_users = []
-        for user in self._users.values():
-            if isinstance(user, PremiumUser):
-                premium_users.append(user)
+    def avg_unique_tracks_per_premium_user(self, days: int = 30):
+        from_date = datetime.now() - timedelta(days=days)
+        premium_users = [
+            user for user in self.all_users() if isinstance(user, PremiumUser)
+        ]
 
         if not premium_users:
             return 0.0
 
         total_unique = 0
-
         for user in premium_users:
-            unique_tracks = set()
-            for session in user.sessions:
-                if session.timestamp >= cutoff:
-                    unique_tracks.add(session.track.track_id)
-            total_unique += len(unique_tracks)
+            seen = set()
+            for s in self._sessions:
+                if s.timestamp >= from_date and s.user == user:
+                    seen.add(s.track.track_id)
+            total_unique += len(seen)
 
-        return float(total_unique / len(premium_users))
+        return total_unique / len(premium_users)
 
     def track_with_most_distinct_listeners(self):
         if not self._sessions:
@@ -149,27 +149,22 @@ class StreamingPlatform:
         return total_seconds / 60
 
     def top_artists_by_listening_time(self, n: int = 5):
-        artist_times = {}
+        artist_listening_time = {}
 
         for session in self._sessions:
-            track = session.track
+            if not isinstance(session.track, Song):
+                continue
 
-            if isinstance(track, Song):
-                artist_id = track.artist.artist_id
+            artist = session.track.artist
+            minutes = session.duration_listened_minutes()
 
-                if artist_id not in artist_times:
-                    artist_times[artist_id] = 0
+            if artist not in artist_listening_time:
+                artist_listening_time[artist] = 0.0
+            artist_listening_time[artist] += minutes
 
-                artist_times[artist_id] += session.duration_listened_seconds
-
-        results = []
-
-        for artist_id, seconds in artist_times.items():
-            artist = self._artists[artist_id]
-            minutes = seconds / 60
-            results.append((artist, minutes))
-
+        results = list(artist_listening_time.items())
         results.sort(key=lambda x: x[1], reverse=True)
+
         return results[:n]
 
     def user_top_genre(self, user_id: str):

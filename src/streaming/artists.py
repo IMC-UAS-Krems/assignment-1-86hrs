@@ -8,11 +8,13 @@ Classes to implement:
 """
 
 class Artist():
-    def __init__(self, artist_id, name, tracks = [], genre = ""):
+    def __init__(self, artist_id, name, tracks = None, genre = ""):
         self.artist_id = artist_id
         self.name = name
         self.genre = genre
-        self.tracks = []
+        self.tracks = tracks
+        self.tracks = list(tracks) if tracks is not None else []
+
     def add_track(self, track):
         self.tracks.append(track)
     def track_count(self):
