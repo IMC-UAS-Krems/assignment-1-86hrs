@@ -18,6 +18,10 @@ from .sessions import ListeningSession
 
 
 class StreamingPlatform:
+    """
+    Main class of the application
+    Attributes: name, catalogue, users, artists, albums, playlists, sessions
+    """
     def __init__(self, name: str):
         self.name = name
         self._catalogue = {}
@@ -64,6 +68,9 @@ class StreamingPlatform:
     def all_tracks(self):
         return list(self._catalogue.values())
 
+    """
+    Loops throughs all sessions and adds up the listening minutes of each session
+    """
     def total_listening_time_minutes(self, start: datetime, end: datetime):
         total_seconds = 0
         for session in self._sessions:
@@ -71,6 +78,9 @@ class StreamingPlatform:
                 total_seconds += session.duration_listened_seconds
         return total_seconds / 60
 
+    """
+    Look at only premium users, count how many distinct tracks each of them streamed in the last N days, then return the average number of unique tracks per premium user or 0 if there are none.
+    """
     def avg_unique_tracks_per_premium_user(self, days: int = 30):
         from_date = datetime.now() - timedelta(days=days)
         premium_users = [
@@ -90,6 +100,9 @@ class StreamingPlatform:
 
         return total_unique / len(premium_users)
 
+    """
+    Creates a dictionary mapping each track to user ids that listened to it, returning the tracks whose set is the larget and none is there is no session
+    """
     def track_with_most_distinct_listeners(self):
         if not self._sessions:
             return None
@@ -115,6 +128,9 @@ class StreamingPlatform:
 
         return self._catalogue.get(best_track_id)
 
+    """
+    Group listening sessions by user type calculates the average session length for each group and return them ranked from longest to shortest.
+    """
     def avg_session_duration_by_user_type(self):
         if not self._sessions:
             return []
@@ -138,6 +154,9 @@ class StreamingPlatform:
         averages.sort(key=lambda x: x[1], reverse=True)
         return averages
 
+    """
+    Iterates through the users keeping only FamilyMember instances that also fit the age_threshold and then sums up their session duration converted to minutes, it returns 0.0 if no macthing users or sessions exist
+    """
     def total_listening_time_underage_sub_users_minutes(self, age_threshold: int = 18):
         total_seconds = 0
 
@@ -148,6 +167,9 @@ class StreamingPlatform:
 
         return total_seconds / 60
 
+    """
+    Iterates through sessions, counting only where the tracks is a Song/AlbumTrack (containing an Artist attribute) and counts the total listening minutes per artists then its sorts them in descending order and returns a tuple containing (Artist, Minutes)
+    """
     def top_artists_by_listening_time(self, n: int = 5):
         artist_listening_time = {}
 
@@ -167,6 +189,9 @@ class StreamingPlatform:
 
         return results[:n]
 
+    """
+    Searches the user by the user id, if none is found or the user doesn't have sessions the function returns None, if eyes then it find the genre with highest total listening time and returns a tuple of (genre, percentage_of_time_listened)
+    """
     def user_top_genre(self, user_id: str):
         user = self._users.get(user_id)
 
@@ -196,6 +221,9 @@ class StreamingPlatform:
 
         return (top_genre, percentage)
 
+    """
+    Iterates through playlists, keeping track only of CollaborativePlaylist instacnes and for each one counts the distinc artists. It returns playlists where the artist count exceeds the threshold
+    """
     def collaborative_playlists_with_many_artists(self, threshold: int = 3):
         result = []
 
@@ -212,6 +240,9 @@ class StreamingPlatform:
 
         return result
 
+    """
+    Calculate the average number of tracks separately for regular playlists and collaborative playlists returning both averages in a dictionary.
+    """
     def avg_tracks_per_playlist_type(self):
         standard = []
         collaborative = []
@@ -233,6 +264,9 @@ class StreamingPlatform:
             "CollaborativePlaylist": average(collaborative),
         }
 
+    """
+    Iterate through the users and collect every track they have listened to, then check which albums they have listened to. Returns a list of users paired with the album titles they completed (User, [albums])
+    """
     def users_who_completed_albums(self):
         result = []
 
